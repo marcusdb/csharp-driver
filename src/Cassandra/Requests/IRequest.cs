@@ -14,6 +14,7 @@
 //   limitations under the License.
 //
 
+using System;
 using System.IO;
 using Cassandra.Serialization;
 
@@ -21,6 +22,8 @@ namespace Cassandra.Requests
 {
     internal interface IRequest
     {
+        Guid RequestId { get; }
+
         /// <summary>
         /// Writes the frame for this request on the provided stream
         /// </summary>

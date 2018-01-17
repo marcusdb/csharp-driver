@@ -14,6 +14,7 @@
 //   limitations under the License.
 //
 
+using System;
 using System.IO;
 using Cassandra.Serialization;
 
@@ -22,6 +23,12 @@ namespace Cassandra.Requests
     internal class OptionsRequest : IRequest
     {
         public const byte OpCode = 0x05;
+
+        public OptionsRequest()
+        {
+            RequestId = Guid.NewGuid();
+        }
+        public Guid RequestId { get; }
 
         public int WriteFrame(short streamId, MemoryStream stream, Serializer serializer)
         {

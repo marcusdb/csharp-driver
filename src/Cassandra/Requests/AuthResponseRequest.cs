@@ -14,6 +14,7 @@
 //   limitations under the License.
 //
 
+using System;
 using System.IO;
 using Cassandra.Serialization;
 
@@ -23,7 +24,11 @@ namespace Cassandra.Requests
     {
         public const byte OpCode = 0x0F;
         private readonly byte[] _token;
-
+        public AuthResponseRequest()
+        {
+            RequestId = Guid.NewGuid();
+        }
+        public Guid RequestId { get; }
         public AuthResponseRequest(byte[] token)
         {
             _token = token;

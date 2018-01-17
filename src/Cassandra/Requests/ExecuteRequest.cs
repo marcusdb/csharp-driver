@@ -31,6 +31,11 @@ namespace Cassandra.Requests
         private readonly byte[] _id;
         private readonly QueryProtocolOptions _queryOptions;
 
+        public ExecuteRequest()
+        {
+            RequestId = Guid.NewGuid();
+        }
+
         public ConsistencyLevel Consistency 
         { 
             get { return _queryOptions.Consistency; }
@@ -54,6 +59,8 @@ namespace Cassandra.Requests
         }
 
         public IDictionary<string, byte[]> Payload { get; set; }
+
+        public Guid RequestId { get; }
 
         public ExecuteRequest(ProtocolVersion protocolVersion, byte[] id, RowSetMetadata metadata, bool tracingEnabled, QueryProtocolOptions queryOptions)
         {

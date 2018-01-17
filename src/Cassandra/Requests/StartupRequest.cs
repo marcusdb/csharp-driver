@@ -14,6 +14,7 @@
 //   limitations under the License.
 //
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Cassandra.Serialization;
@@ -24,7 +25,11 @@ namespace Cassandra.Requests
     {
         public const byte OpCode = 0x01;
         private readonly IDictionary<string, string> _options;
-
+        public StartupRequest()
+        {
+            RequestId = Guid.NewGuid();
+        }
+        public Guid RequestId { get; }
         public StartupRequest(IDictionary<string, string> options)
         {
             _options = options;

@@ -27,6 +27,11 @@ namespace Cassandra.Requests
     internal class QueryRequest : IQueryRequest, ICqlRequest
     {
         public const byte OpCode = 0x07;
+        public QueryRequest()
+        {
+            RequestId = Guid.NewGuid();
+        }
+        public Guid RequestId { get; }
 
         public ConsistencyLevel Consistency
         {

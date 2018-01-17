@@ -14,6 +14,7 @@
 //   limitations under the License.
 //
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Cassandra.Serialization;
@@ -24,7 +25,11 @@ namespace Cassandra.Requests
     {
         public const byte OpCode = 0x0B;
         private readonly List<string> _eventTypes;
-
+        public RegisterForEventRequest()
+        {
+            RequestId = Guid.NewGuid();
+        }
+        public Guid RequestId { get; }
         public RegisterForEventRequest(CassandraEventType eventTypes)
         {
             _eventTypes = new List<string>();

@@ -29,6 +29,7 @@ using Cassandra.Requests;
 using Cassandra.Responses;
 using Cassandra.Serialization;
 using Microsoft.IO;
+using System.Diagnostics;
 
 namespace Cassandra
 {
@@ -44,7 +45,7 @@ namespace Cassandra
         private const string StreamWriteTag = nameof(Connection) + "/Write";
 
         private static readonly Logger Logger = new Logger(typeof(Connection));
-        
+        private  Dictionary<Guid, Stopwatch> PoolTimer = new Dictionary<Guid, Stopwatch>();
         private readonly Serializer _serializer;
         private readonly TcpSocket _tcpSocket;
         private long _disposed;
@@ -702,6 +703,7 @@ namespace Cassandra
         public Task<Response> Send(IRequest request, int timeoutMillis = Timeout.Infinite)
         {
             var tcs = new TaskCompletionSource<Response>();
+            PoolTimer.Add(request.RequestId, Stopwatch.StartNew());
             Send(request, tcs.TrySet, timeoutMillis);
             return tcs.Task;
         }
@@ -769,6 +771,14 @@ namespace Cassandra
                     Logger.Info("Enqueued, no streamIds available. If this message is recurrent consider configuring more connections per host or lower the pressure");
                     break;
                 }
+                Stopwatch stopwatch;
+              
+                if (PoolTimer.TryGetValue(state.Request.RequestId, out stopwatch))
+                {
+                    Logger.Verbose("request wait {0}", PoolTimer[state.Request.RequestId].ElapsedMilliseconds);
+                    PoolTimer.Remove(state.Request.RequestId);
+                }
+               
                 Logger.Verbose("Sending #{0} for {1} to {2}", streamId, state.Request.GetType().Name, Address);
                 if (_isCanceled)
                 {

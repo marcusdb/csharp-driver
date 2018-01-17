@@ -25,7 +25,11 @@ namespace Cassandra.Requests
     internal class BatchRequest : ICqlRequest
     {
         private const byte OpCode = 0x0D;
-
+        public BatchRequest()
+        {
+            RequestId = Guid.NewGuid();
+        }
+        public Guid RequestId { get; }
         private FrameHeader.HeaderFlag _headerFlags;
         private readonly QueryProtocolOptions.QueryFlags _batchFlags = 0;
         private readonly ICollection<IQueryRequest> _requests;

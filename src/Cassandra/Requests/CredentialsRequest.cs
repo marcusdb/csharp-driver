@@ -24,7 +24,11 @@ namespace Cassandra.Requests
     {
         public const byte OpCode = 0x04;
         private readonly IDictionary<string, string> _credentials;
-
+        public CredentialsRequest()
+        {
+            RequestId = Guid.NewGuid();
+        }
+        public Guid RequestId { get; }
         public CredentialsRequest(IDictionary<string, string> credentials)
         {
             _credentials = credentials;

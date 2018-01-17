@@ -14,6 +14,7 @@
 //   limitations under the License.
 //
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Cassandra.Serialization;
@@ -21,7 +22,15 @@ using Cassandra.Serialization;
 namespace Cassandra.Requests
 {
     internal class PrepareRequest : IRequest
+
+
     {
+        public PrepareRequest()
+        {
+            RequestId = Guid.NewGuid();
+        }
+        public Guid RequestId { get; }
+
         public const byte OpCode = 0x09;
         private IDictionary<string, byte[]> _payload;
         private FrameHeader.HeaderFlag _headerFlags;
