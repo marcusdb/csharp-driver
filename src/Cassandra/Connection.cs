@@ -45,7 +45,7 @@ namespace Cassandra
         private const string StreamWriteTag = nameof(Connection) + "/Write";
 
         private static readonly Logger Logger = new Logger(typeof(Connection));
-        private  Dictionary<Guid, Stopwatch> PoolTimer = new Dictionary<Guid, Stopwatch>();
+        private static ConcurrentDictionary<Guid, Stopwatch> PoolTimer = new ConcurrentDictionary<Guid, Stopwatch>();
         private readonly Serializer _serializer;
         private readonly TcpSocket _tcpSocket;
         private long _disposed;
@@ -106,7 +106,7 @@ namespace Cassandra
         /// Determines the amount of operations that are not finished.
         /// </summary>
         public virtual int InFlight
-        { 
+        {
             get { return (int)Interlocked.Read(ref _inFlight); }
         }
 
@@ -193,7 +193,7 @@ namespace Cassandra
             //Determine which authentication flow to use.
             //Check if its using a C* 1.2 with authentication patched version (like DSE 3.1)
             var protocolVersion = _serializer.ProtocolVersion;
-            var isPatchedVersion = protocolVersion == ProtocolVersion.V1 && 
+            var isPatchedVersion = protocolVersion == ProtocolVersion.V1 &&
                 !(Configuration.AuthProvider is NoneAuthProvider) && Configuration.AuthInfoProvider == null;
             if (protocolVersion == ProtocolVersion.V1 && !isPatchedVersion)
             {
@@ -220,7 +220,7 @@ namespace Cassandra
             if (Configuration.AuthProvider is IAuthProviderNamed)
             {
                 //Provide name when required
-                ((IAuthProviderNamed) Configuration.AuthProvider).SetName(name);
+                ((IAuthProviderNamed)Configuration.AuthProvider).SetName(name);
             }
             //NewAuthenticator will throw AuthenticationException when NoneAuthProvider
             var authenticator = Configuration.AuthProvider.NewAuthenticator(Address);
@@ -234,7 +234,7 @@ namespace Cassandra
         {
             var request = new AuthResponseRequest(token);
             var response = await Send(request).ConfigureAwait(false);
-            
+
             if (response is AuthSuccessResponse)
             {
                 // It is now authenticated, dispose Authenticator if it implements IDisposable()
@@ -343,7 +343,7 @@ namespace Cassandra
             }
             if (CassandraEventResponse != null)
             {
-                CassandraEventResponse(this, ((EventResponse) response).CassandraEventArgs);
+                CassandraEventResponse(this, ((EventResponse)response).CassandraEventArgs);
             }
         }
 
@@ -529,7 +529,7 @@ namespace Cassandra
                 else
                 {
                     previousHeader = null;
-                    remainingBodyLength = header.BodyLength - (int) stream.Length;
+                    remainingBodyLength = header.BodyLength - (int)stream.Length;
                 }
                 if (remainingBodyLength > length - offset)
                 {
@@ -570,7 +570,7 @@ namespace Cassandra
                             Utils.JoinBuffers(previousHeaderBuffer, 0, previousHeaderBuffer.Length, buffer, 0, length));
                         return null;
                     }
-                    offset += headerLength - previousHeaderBuffer.Length; 
+                    offset += headerLength - previousHeaderBuffer.Length;
                     // Use the previous and the current buffer to build the header
                     return FrameHeader.ParseResponseHeader(version, previousHeaderBuffer, buffer);
                 }
@@ -643,7 +643,7 @@ namespace Cassandra
                 if (response is ErrorResponse)
                 {
                     //Create an exception from the response error
-                    ex = ((ErrorResponse) response).Output.CreateException();
+                    ex = ((ErrorResponse)response).Output.CreateException();
                     response = null;
                 }
                 //We must advance the position of the stream manually in case it was not correctly parsed
@@ -703,7 +703,7 @@ namespace Cassandra
         public Task<Response> Send(IRequest request, int timeoutMillis = Timeout.Infinite)
         {
             var tcs = new TaskCompletionSource<Response>();
-            PoolTimer.Add(request.RequestId, Stopwatch.StartNew());
+
             Send(request, tcs.TrySet, timeoutMillis);
             return tcs.Task;
         }
@@ -713,6 +713,8 @@ namespace Cassandra
         /// </summary>
         public OperationState Send(IRequest request, Action<Exception, Response> callback, int timeoutMillis = Timeout.Infinite)
         {
+
+            PoolTimer.TryAdd(request.RequestId, Stopwatch.StartNew());
             if (_isCanceled)
             {
                 // Avoid calling back before returning
@@ -743,7 +745,7 @@ namespace Cassandra
                 // Probably there is an item in the write queue, we should cancel pending
                 // Avoid canceling in the user thread
                 Task.Factory.StartNew(() => CancelPending(null), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
-                return;   
+                return;
             }
             // Start a new task using the TaskScheduler for writing to avoid using the User thread
             Task.Factory.StartNew(RunWriteQueueAction, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
@@ -772,17 +774,17 @@ namespace Cassandra
                     break;
                 }
                 Stopwatch stopwatch;
-              
+
                 if (PoolTimer.TryGetValue(state.Request.RequestId, out stopwatch))
                 {
-                    Logger.Verbose("request wait {0}", PoolTimer[state.Request.RequestId].ElapsedMilliseconds);
-                    PoolTimer.Remove(state.Request.RequestId);
+                    Logger.Error("{0};{1}", PoolTimer.Count, stopwatch.ElapsedMilliseconds);
+                    PoolTimer.TryRemove(state.Request.RequestId, out stopwatch);
                 }
-               
+
                 Logger.Verbose("Sending #{0} for {1} to {2}", streamId, state.Request.GetType().Name, Address);
                 if (_isCanceled)
                 {
-                    state.InvokeCallback(new SocketException((int) SocketError.NotConnected));
+                    state.InvokeCallback(new SocketException((int)SocketError.NotConnected));
                     break;
                 }
                 _pendingOperations.AddOrUpdate(streamId, state, (k, oldValue) => state);
@@ -791,7 +793,7 @@ namespace Cassandra
                 try
                 {
                     //lazy initialize the stream
-                    stream = stream ?? (RecyclableMemoryStream) Configuration.BufferPool.GetStream(StreamWriteTag);
+                    stream = stream ?? (RecyclableMemoryStream)Configuration.BufferPool.GetStream(StreamWriteTag);
                     frameLength = state.Request.WriteFrame(streamId, stream, _serializer);
                     if (state.TimeoutMillis > 0)
                     {
@@ -914,7 +916,7 @@ namespace Cassandra
             var ex = new OperationTimedOutException(Address, state.TimeoutMillis);
             //Invoke if it hasn't been invoked yet
             //Once the response is obtained, we decrement the timed out counter
-            var timedout = state.MarkAsTimedOut(ex, () => Interlocked.Decrement(ref _timedOutOperations) );
+            var timedout = state.MarkAsTimedOut(ex, () => Interlocked.Decrement(ref _timedOutOperations));
             if (!timedout)
             {
                 //The response was obtained since the timer elapsed, move on

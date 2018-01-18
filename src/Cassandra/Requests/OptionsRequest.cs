@@ -24,11 +24,12 @@ namespace Cassandra.Requests
     {
         public const byte OpCode = 0x05;
 
+         public Guid RequestId { get; set; }
+
         public OptionsRequest()
         {
-            RequestId = Guid.NewGuid();
+            this.RequestId = Guid.NewGuid();
         }
-        public Guid RequestId { get; }
 
         public int WriteFrame(short streamId, MemoryStream stream, Serializer serializer)
         {

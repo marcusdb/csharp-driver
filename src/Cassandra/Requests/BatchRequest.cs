@@ -25,11 +25,7 @@ namespace Cassandra.Requests
     internal class BatchRequest : ICqlRequest
     {
         private const byte OpCode = 0x0D;
-        public BatchRequest()
-        {
-            RequestId = Guid.NewGuid();
-        }
-        public Guid RequestId { get; }
+        public Guid RequestId { get; set; }
         private FrameHeader.HeaderFlag _headerFlags;
         private readonly QueryProtocolOptions.QueryFlags _batchFlags = 0;
         private readonly ICollection<IQueryRequest> _requests;
@@ -44,6 +40,7 @@ namespace Cassandra.Requests
         public BatchRequest(ProtocolVersion protocolVersion, BatchStatement statement, ConsistencyLevel consistency,
                             Policies policies)
         {
+            this.RequestId = Guid.NewGuid();
             if (!protocolVersion.SupportsBatch())
             {
                 throw new NotSupportedException("Batch request is supported in C* >= 2.0.x");
@@ -73,7 +70,7 @@ namespace Cassandra.Requests
             _timestamp = GetRequestTimestamp(protocolVersion, statement, policies);
             if (_timestamp != null)
             {
-                _batchFlags |= QueryProtocolOptions.QueryFlags.WithDefaultTimestamp;   
+                _batchFlags |= QueryProtocolOptions.QueryFlags.WithDefaultTimestamp;
             }
         }
 
@@ -98,7 +95,7 @@ namespace Cassandra.Requests
                 return TypeSerializer.SinceUnixEpoch(statement.Timestamp.Value).Ticks / 10;
             }
             var timestamp = policies.TimestampGenerator.Next();
-            return timestamp != long.MinValue ? (long?) timestamp : null;
+            return timestamp != long.MinValue ? (long?)timestamp : null;
         }
 
         public int WriteFrame(short streamId, MemoryStream stream, Serializer serializer)
@@ -117,13 +114,13 @@ namespace Cassandra.Requests
                 //A custom payload for this request
                 wb.WriteBytesMap(Payload);
             }
-            wb.WriteByte((byte) _type);
-            wb.WriteUInt16((ushort) _requests.Count);
+            wb.WriteByte((byte)_type);
+            wb.WriteUInt16((ushort)_requests.Count);
             foreach (var br in _requests)
             {
                 br.WriteToBatch(wb);
             }
-            wb.WriteUInt16((ushort) Consistency);
+            wb.WriteUInt16((ushort)Consistency);
             if (protocolVersion.SupportsTimestamp())
             {
                 wb.WriteByte((byte)_batchFlags);

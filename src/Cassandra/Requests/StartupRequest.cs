@@ -25,13 +25,11 @@ namespace Cassandra.Requests
     {
         public const byte OpCode = 0x01;
         private readonly IDictionary<string, string> _options;
-        public StartupRequest()
-        {
-            RequestId = Guid.NewGuid();
-        }
-        public Guid RequestId { get; }
+        public Guid RequestId { get; set; }
+
         public StartupRequest(IDictionary<string, string> options)
         {
+            this.RequestId = Guid.NewGuid();
             _options = options;
         }
 
@@ -39,7 +37,7 @@ namespace Cassandra.Requests
         {
             var wb = new FrameWriter(stream, serializer);
             wb.WriteFrameHeader(0x00, streamId, OpCode);
-            wb.WriteUInt16((ushort) _options.Count);
+            wb.WriteUInt16((ushort)_options.Count);
             foreach (var kv in _options)
             {
                 wb.WriteString(kv.Key);

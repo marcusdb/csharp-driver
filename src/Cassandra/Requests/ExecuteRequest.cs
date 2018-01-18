@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using Cassandra.Serialization;
 
@@ -31,13 +32,10 @@ namespace Cassandra.Requests
         private readonly byte[] _id;
         private readonly QueryProtocolOptions _queryOptions;
 
-        public ExecuteRequest()
-        {
-            RequestId = Guid.NewGuid();
-        }
+        public Guid RequestId { get; set; }
 
-        public ConsistencyLevel Consistency 
-        { 
+        public ConsistencyLevel Consistency
+        {
             get { return _queryOptions.Consistency; }
             set { _queryOptions.Consistency = value; }
         }
@@ -60,10 +58,10 @@ namespace Cassandra.Requests
 
         public IDictionary<string, byte[]> Payload { get; set; }
 
-        public Guid RequestId { get; }
 
         public ExecuteRequest(ProtocolVersion protocolVersion, byte[] id, RowSetMetadata metadata, bool tracingEnabled, QueryProtocolOptions queryOptions)
         {
+            this.RequestId = Guid.NewGuid();
             if (metadata != null && queryOptions.Values.Length != metadata.Columns.Length)
             {
                 throw new ArgumentException("Number of values does not match with number of prepared statement markers(?).");

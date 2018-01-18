@@ -25,13 +25,12 @@ namespace Cassandra.Requests
     {
         public const byte OpCode = 0x0B;
         private readonly List<string> _eventTypes;
-        public RegisterForEventRequest()
-        {
-            RequestId = Guid.NewGuid();
-        }
-        public Guid RequestId { get; }
+        public Guid RequestId { get; set; }
+
         public RegisterForEventRequest(CassandraEventType eventTypes)
         {
+            RequestId = Guid.NewGuid();
+
             _eventTypes = new List<string>();
             if ((eventTypes & CassandraEventType.StatusChange) == CassandraEventType.StatusChange)
             {

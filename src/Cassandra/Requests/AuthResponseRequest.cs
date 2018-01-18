@@ -24,13 +24,10 @@ namespace Cassandra.Requests
     {
         public const byte OpCode = 0x0F;
         private readonly byte[] _token;
-        public AuthResponseRequest()
-        {
-            RequestId = Guid.NewGuid();
-        }
-        public Guid RequestId { get; }
+        public Guid RequestId { get; set; }
         public AuthResponseRequest(byte[] token)
         {
+            this.RequestId = Guid.NewGuid();
             _token = token;
         }
 

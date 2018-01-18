@@ -24,13 +24,10 @@ namespace Cassandra.Requests
     {
         public const byte OpCode = 0x04;
         private readonly IDictionary<string, string> _credentials;
-        public CredentialsRequest()
-        {
-            RequestId = Guid.NewGuid();
-        }
-        public Guid RequestId { get; }
+        public Guid RequestId { get; set; }
         public CredentialsRequest(IDictionary<string, string> credentials)
         {
+            this.RequestId = Guid.NewGuid();
             _credentials = credentials;
         }
 
@@ -43,7 +40,7 @@ namespace Cassandra.Requests
 
             var wb = new FrameWriter(stream, serializer);
             wb.WriteFrameHeader(0x00, streamId, OpCode);
-            wb.WriteUInt16((ushort) _credentials.Count);
+            wb.WriteUInt16((ushort)_credentials.Count);
             foreach (var kv in _credentials)
             {
                 wb.WriteString(kv.Key);

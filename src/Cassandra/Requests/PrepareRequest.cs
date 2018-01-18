@@ -22,14 +22,8 @@ using Cassandra.Serialization;
 namespace Cassandra.Requests
 {
     internal class PrepareRequest : IRequest
-
-
     {
-        public PrepareRequest()
-        {
-            RequestId = Guid.NewGuid();
-        }
-        public Guid RequestId { get; }
+        public Guid RequestId { get; set; }
 
         public const byte OpCode = 0x09;
         private IDictionary<string, byte[]> _payload;
@@ -54,6 +48,7 @@ namespace Cassandra.Requests
 
         public PrepareRequest(string cqlQuery)
         {
+            this.RequestId = Guid.NewGuid();
             Query = cqlQuery;
         }
 

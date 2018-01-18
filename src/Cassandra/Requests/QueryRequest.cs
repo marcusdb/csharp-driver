@@ -27,16 +27,12 @@ namespace Cassandra.Requests
     internal class QueryRequest : IQueryRequest, ICqlRequest
     {
         public const byte OpCode = 0x07;
-        public QueryRequest()
-        {
-            RequestId = Guid.NewGuid();
-        }
-        public Guid RequestId { get; }
+        public Guid RequestId { get; set; }
 
         public ConsistencyLevel Consistency
         {
             get { return _queryOptions.Consistency; }
-            set { _queryOptions.Consistency = value;}
+            set { _queryOptions.Consistency = value; }
         }
 
         public byte[] PagingState
@@ -55,7 +51,7 @@ namespace Cassandra.Requests
             get { return _queryOptions.SerialConsistency; }
         }
 
-        public string Query { get { return _cqlQuery; }}
+        public string Query { get { return _cqlQuery; } }
 
         public IDictionary<string, byte[]> Payload { get; set; }
 
@@ -65,6 +61,8 @@ namespace Cassandra.Requests
 
         public QueryRequest(ProtocolVersion protocolVersion, string cqlQuery, bool tracingEnabled, QueryProtocolOptions queryOptions)
         {
+            this.RequestId = Guid.NewGuid();
+
             _cqlQuery = cqlQuery;
             _queryOptions = queryOptions;
             if (tracingEnabled)
@@ -123,7 +121,7 @@ namespace Cassandra.Requests
             }
             else
             {
-                wb.WriteUInt16((ushort) _queryOptions.Values.Length);
+                wb.WriteUInt16((ushort)_queryOptions.Values.Length);
                 foreach (var queryParameter in _queryOptions.Values)
                 {
                     wb.WriteAsBytes(queryParameter);
