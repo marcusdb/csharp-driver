@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using Cassandra.Interceptor;
 using Cassandra.Serialization;
 
 namespace Cassandra
@@ -52,6 +53,7 @@ namespace Cassandra
         private ISpeculativeExecutionPolicy _speculativeExecutionPolicy;
         private ProtocolVersion _maxProtocolVersion = ProtocolVersion.MaxSupported;
         private TypeSerializerDefinitions _typeSerializerDefinitions;
+        private IInterceptor _interceptor;
 
         /// <summary>
         ///  The pooling options used by this builder.
@@ -108,7 +110,8 @@ namespace Cassandra
                 _authProvider,
                 _authInfoProvider,
                 _queryOptions,
-                _addressTranslator);
+                _addressTranslator,
+                _interceptor);
             if (_typeSerializerDefinitions != null)
             {
                 config.TypeSerializers = _typeSerializerDefinitions.Definitions;
@@ -131,6 +134,21 @@ namespace Cassandra
             }
             return this;
         }
+
+
+        /// <summary>
+        ///  Metrics interceptor to accumulate metrics values
+        /// </summary>
+        /// <param name="interceptor"> Implementor of IInterceptor </param>
+        /// <returns>this Builder</returns>
+        public Builder WithInterceptor(IInterceptor interceptor)
+        {
+            _interceptor = interceptor;
+
+            return this;
+        }
+
+
 
 
         /// <summary>

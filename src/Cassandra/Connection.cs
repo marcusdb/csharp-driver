@@ -30,6 +30,7 @@ using Cassandra.Responses;
 using Cassandra.Serialization;
 using Microsoft.IO;
 using System.Diagnostics;
+using Cassandra.Interceptor;
 
 namespace Cassandra
 {
@@ -166,6 +167,7 @@ namespace Cassandra
         public ProtocolOptions Options { get { return Configuration.ProtocolOptions; } }
 
         public Configuration Configuration { get; set; }
+        private IInterceptor Interceptor { get; }
 
         public Connection(Serializer serializer, IPEndPoint endpoint, Configuration configuration)
         {
@@ -179,6 +181,7 @@ namespace Cassandra
             }
             _serializer = serializer;
             Configuration = configuration;
+            Interceptor = configuration.Interceptor;
             _tcpSocket = new TcpSocket(endpoint, configuration.SocketOptions, configuration.ProtocolOptions.SslOptions);
             _idleTimer = new Timer(IdleTimeoutHandler, null, Timeout.Infinite, Timeout.Infinite);
         }
@@ -777,6 +780,7 @@ namespace Cassandra
 
                 if (PoolTimer.TryGetValue(state.Request.RequestId, out stopwatch))
                 {
+                    Interceptor?.InterceptQueueWait(Address.ToString(), stopwatch.Elapsed.Ticks);
                     Logger.Error("{0};{1}", PoolTimer.Count, stopwatch.ElapsedMilliseconds);
                     PoolTimer.TryRemove(state.Request.RequestId, out stopwatch);
                 }
